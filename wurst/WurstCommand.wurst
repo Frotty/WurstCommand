@@ -8,7 +8,7 @@
 	```
 	package Commands
 	import ClosureTimers
-	import LinkedList
+	import ArrayList
 	import Time
 
 	import WurstCommand
@@ -42,14 +42,14 @@
 			(_p, cmd, args) -> cmd.substring(1,2) == "!" and args.size() == 0,
 			(p, cmd, _args) -> begin
 				for i = 2 to cmd.length() - 1
-					handleCommand(p, cmd.substring(i, i + 1), asList<string>())
+					handleCommand(p, cmd.substring(i, i + 1), new ArrayList<string>())
 			end
 		)
 	```
 */
 package WurstCommand
 import ClosureEvents
-import LinkedList
+import ArrayList
 import StringUtils
 
 /** Whether or not to detect invalid commands and show a list of available commands */
@@ -61,7 +61,7 @@ import StringUtils
 	Ownership is implicitly static - the closure is never recycled.
 */
 public interface ArgHandler
-	function handleArgs(player p, string cmd, LinkedList<string> args)
+	function handleArgs(player p, string cmd, ArrayList<string> args)
 
 /**
 	Command matcher: how to decide if a command should match a handler.
@@ -69,7 +69,7 @@ public interface ArgHandler
 	Ownership is implicitly static - the closure is never recycled.
 */
 public interface CmdMatcher
-	function matchCmd(player p, string cmd, LinkedList<string> args) returns bool
+	function matchCmd(player p, string cmd, ArrayList<string> args) returns bool
 
 class Handler
 	CmdMatcher matcher
@@ -81,13 +81,13 @@ class Handler
 		this.handler = handler
 		this.cmd = cmd
 
-constant argHandlers = new LinkedList<Handler>()
+constant argHandlers = new ArrayList<Handler>()
 
 /**
 	Add a command handler which uses a custom matching closure.
 */
 public function addCommand(string cmd, CmdMatcher cMatcher, ArgHandler handler)
-	argHandlers.push(new Handler(cMatcher, handler, cmd))
+	argHandlers.add(new Handler(cMatcher, handler, cmd))
 
 /**
 	Add a command handler that matches an exact match on `cmd`.
@@ -98,6 +98,13 @@ public function addCommand(string cmd, ArgHandler handler)
 init
 	if ADD_DEFAULT_HANDLER
 		addCommand(null, (_p, _zcmd, _args) -> true) (p, cmd, _args) ->
+			var available = ""
+			for i = 0 to argHandlers.size() - 1
+				let name = argHandlers.get(i).cmd
+				if name != null
+					if available != ""
+						available += ", "
+					available += name
 			DisplayTimedTextToPlayer(
 				p,
 				0.,
@@ -106,10 +113,7 @@ init
 				"Command |cffffcc00" +
 					cmd +
 					"|r not found! Available commands: [" +
-					argHandlers
-						.map(h -> h.cmd)
-						.filter(t -> t != null)
-						.joinBy(", ") +
+					available +
 					"]"
 			)
 
@@ -122,9 +126,10 @@ init
 	Handle a command instantly (once).  This can be useful when writing
 	recursive command handlers.
 */
-public function handleCommand(player p, string str, LinkedList<string> args)
+public function handleCommand(player p, string str, ArrayList<string> args)
 	let copy = argHandlers.copy()
-	for matcher from copy.backiterator()
+	for i = copy.size() - 1 downto 0
+		let matcher = copy.get(i)
 		if matcher.matcher.matchCmd(p, str, args)
 			matcher.handler.handleArgs(p, str, args)
 			break
@@ -134,7 +139,7 @@ public function handleCommand(player p, string str, LinkedList<string> args)
 
 function parseCommand(string str)
 	let p = GetTriggerPlayer()
-	let args = str.substring(1).split(" ")
+	let args = str.substring(1).splitToArray(" ")
 	let cstr = args.get(0)
 	args.dequeue()
 	handleCommand(p, cstr, args)

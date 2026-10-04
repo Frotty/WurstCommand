@@ -1,6 +1,9 @@
 ---
 projectName: WurstCommand
+dependencies:
+- https://github.com/wurstscript/wurstStdlib2:codex-lua-collections
 buildMapData:
   name: MyMapName
   fileName: MyMapFile
   author: Blake
+wc3Patch: v3.0

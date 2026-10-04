@@ -1,0 +1,31 @@
+package WurstCommandTests
+import WurstCommand
+import ArrayList
+import Reference
+
+@Test function handlersKeepLifoPrecedenceAndTypedArguments()
+    let result = reference("")
+    addCommand("typed-precedence") (_p, _cmd, args) ->
+        result.val = "older"
+    addCommand("typed-precedence") (_p, _cmd, args) ->
+        result.val = args.get(0) + ":" + args.get(1)
+    handleCommand(Player(0), "typed-precedence", asArrayList("one", "two"))
+    result.val.assertEquals("one:two")
+
+@Test function handlersRegisteredDuringMatchingWaitForTheNextDispatch()
+    let result = reference("")
+    let registered = reference(false)
+    addCommand("typed-snapshot") (_p, _cmd, _args) ->
+        result.val = "original"
+    addCommand("typed-snapshot", (_p, cmd, _args) -> begin
+        if cmd == "typed-snapshot" and not registered.val
+            registered.val = true
+            addCommand("typed-snapshot") (_p2, _cmd2, _args2) ->
+                result.val = "new"
+        return false
+    end) (_p, _cmd, _args) ->
+        result.val = "never"
+    handleCommand(Player(0), "typed-snapshot", new ArrayList<string>())
+    result.val.assertEquals("original")
+    handleCommand(Player(0), "typed-snapshot", new ArrayList<string>())
+    result.val.assertEquals("new")
