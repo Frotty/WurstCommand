@@ -1,7 +1,7 @@
 ---
 - Package:
-    doc: ~
-    name: Commands
+    doc: "WurstCommand - this package is for setting up a player chat command handler.\r\n\tCommands handlers are evaluated for use in LIFO.  There is a default handler\r\n\tif no command matches.\r\n\r\n\tSample usage:\r\n\r\n\t```\r\n\tpackage Commands\r\n\timport ClosureTimers\r\n\timport ArrayList\r\n\timport Time\r\n\r\n\timport WurstCommand\r\n\r\n\tinit\r\n\t\t// Help command tells the user to kill the enemy.\r\n\t\taddCommand(\"help\") (p, _cmd, _args) ->\r\n\t\t\tprintTimedToPlayerClear(\"Defeat the enemy to advance.\", 10., p)\r\n\r\n\t\t// \"Remind\" uses a custom matcher to ignore incomplete remind requests.\r\n\t\t//\r\n\t\t// \"-remind me in 15 seconds\"\r\n\t\t// > Reminding you in 15 seconds\"\r\n\t\t// ...\r\n\t\t// > Reminder: 15 seconds have passed.\r\n\t\taddCommand(\r\n\t\t\t\"remind\",\r\n\t\t\t(_p, _cmd, args) -> args.get(1) == \"me\" and args.get(2) == \"in\" and args.get(4) == \"seconds\",\r\n\t\t\t(p, _cmd, args) -> begin\r\n\t\t\t\tlet secs = args.get(3).toReal().seconds()\r\n\t\t\t\tprintTimedToPlayer(\"Reminding you in \" + secs.displayVerbose(), 30., p)\r\n\t\t\t\tdoAfter(secs.seconds) ->\r\n\t\t\t\t\tprintTimedToPlayer(\"Reminder: \" + secs.displayVerbose() + \" have passed.\", 30., p)\r\n\t\t\tend\r\n\t\t)\r\n\r\n\t\t// A command that starts with `!` sends each character as a separate\r\n\t\t// command i.e. \"-!asdf\" -> \"-a, -s, -d, -f\"\r\n\t\taddCommand(\r\n\t\t\tnull,\r\n\t\t\t(_p, cmd, args) -> cmd.substring(1,2) == \"!\" and args.size() == 0,\r\n\t\t\t(p, cmd, _args) -> begin\r\n\t\t\t\tfor i = 2 to cmd.length() - 1\r\n\t\t\t\t\thandleCommand(p, cmd.substring(i, i + 1), new ArrayList<string>())\r\n\t\t\tend\r\n\t\t)\r\n\t```"
+    name: WurstCommand
     classes: []
     enums: []
     free_fns:
@@ -17,7 +17,7 @@
           - typ: ArgHandler
             name: handler
         returns: ~
-      - doc: "Add a command handler that matches an exact match on \"cmd\"."
+      - doc: "Add a command handler that matches an exact match on `cmd`."
         static_: false
         extensor: ~
         name: addCommand
@@ -27,7 +27,7 @@
           - typ: ArgHandler
             name: handler
         returns: ~
-      - doc: "Handle a command instantly (once).  This can be useful when writing\n\trecursive command handlers."
+      - doc: "Handle a command instantly (once).  This can be useful when writing\r\n\trecursive command handlers."
         static_: false
         extensor: ~
         name: handleCommand
@@ -36,6 +36,38 @@
             name: p
           - typ: string
             name: str
-          - typ: LinkedList<string>
+          - typ: ArrayList<string>
             name: args
         returns: ~
+    interfaces:
+      - doc: "Argument handler: what to execute when a command has been matched.\r\n\r\n\tOwnership is implicitly static - the closure is never recycled."
+        name: ArgHandler
+        fns:
+          - doc: ~
+            static_: false
+            extensor: ~
+            name: handleArgs
+            params:
+              - typ: player
+                name: p
+              - typ: string
+                name: cmd
+              - typ: ArrayList<string>
+                name: args
+            returns: ~
+      - doc: "Command matcher: how to decide if a command should match a handler.\r\n\r\n\tOwnership is implicitly static - the closure is never recycled."
+        name: CmdMatcher
+        fns:
+          - doc: ~
+            static_: false
+            extensor: ~
+            name: matchCmd
+            params:
+              - typ: player
+                name: p
+              - typ: string
+                name: cmd
+              - typ: ArrayList<string>
+                name: args
+            returns: bool
+
